@@ -31,7 +31,7 @@ public class ByteBufferReader {
 
         // 获取数据
         if(buffer.hasRemaining()){ // 剩余未读的内容
-            // 从头开始读
+            // rewind 从头开始读
             buffer.get(new byte[4]);
             buffer.rewind();
             // 打印内容
