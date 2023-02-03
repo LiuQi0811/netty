@@ -31,9 +31,15 @@ public class FileChannelTransferTo {
                 final FileChannel to = new FileOutputStream("to.txt").getChannel()
         ){
 
-            // transferTo  数据传输 效率高 底层会利用零拷贝进行优化
-            // 参数一 起始位置 参数二 数据大小 参数三 传输位置
-            from.transferTo(0,from.size(),to);
+            // transferTo  数据传输 效率高 底层会利用零拷贝进行优化 最大传输2G
+            //解决最大传输的问题
+            final long size = from.size();
+            // left 代表还剩余多少字节没传输
+            for (long left =size;  left>0;){
+                log.debug("当前位置：{}, 剩余字节：{}",(size-left),left);
+                // 参数一 起始位置 参数二 数据大小 参数三 传输位置
+                left -= from.transferTo((size-left),left,to);
+            }
             final long end = System.currentTimeMillis();
             log.debug("数据传输完成: {}", (end-start)+"ms");
         }catch (IOException e){
