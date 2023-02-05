@@ -164,17 +164,28 @@ public class Server {
                     socketKey.interestOps(SelectionKey.OP_READ);
                     log.info("socketKey {}",socketKey);
                 }else if (selectionKey.isReadable()){ // read 可读事件 SocketChannel 读取
-                    final SocketChannel channel = (SocketChannel)selectionKey.channel(); // 拿到触发事件的channel
-                    // 创建缓冲区
-                    final ByteBuffer buffer = ByteBuffer.allocate(30);
-                    // 读取数据
-                    channel.read(buffer);
-                    // 切换读取模式
-                    buffer.flip();
-                    // 读取中文字符
-                    log.info("INFO READ:  {}",Charset.defaultCharset().decode(buffer));
+                    try {
+                        final SocketChannel channel = (SocketChannel)selectionKey.channel(); // 拿到触发事件的channel
+                        // 创建缓冲区
+                        final ByteBuffer buffer = ByteBuffer.allocate(30);
+                        // 读取数据 实际字节数 如果正常断开连接返回值 -1
+                        final int len = channel.read(buffer);
+                        if(len == -1){
+                            // 取消(从selector的key集合中真正删除)selectionKey
+                            selectionKey.cancel();
+                        }else {
+                            // 切换读取模式
+                            buffer.flip();
+                            // 读取中文字符
+                            log.info("INFO READ:  {}",Charset.defaultCharset().decode(buffer));
+                        }
+
+                    }catch (IOException e){
+                        e.printStackTrace();
+                        // 因为客户端断开了，取消(从selector的key集合中真正删除)selectionKey
+                        selectionKey.cancel();
+                    }
                 }
-                selectionKey.cancel();
             }
 
         }
