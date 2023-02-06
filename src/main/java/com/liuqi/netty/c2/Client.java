@@ -22,6 +22,7 @@ public class Client {
         socketChannel.connect(new InetSocketAddress("localhost",8080));
         socketChannel.write(Charset.defaultCharset().encode("我爱你，李桂雪"));
         log.info("等待中.....");
+        System.in.read(); //阻塞方法
 
     }
 }

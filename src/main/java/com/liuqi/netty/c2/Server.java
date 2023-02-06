@@ -160,24 +160,38 @@ public class Server {
                     log.info("{}",socketChannel);
                     // 非阻塞模式
                     socketChannel.configureBlocking(false);
-                    final SelectionKey socketKey = socketChannel.register(selector, 0, null);
+                    //创建缓冲区  attachment 将buffer作为附件关联到SelectionKey上
+                    final ByteBuffer buffer = ByteBuffer.allocate(16);
+                    // SelectionKey 将来事件发生后 通过他可以知道事件和哪个channel的事件   0代表不关注任何事件
+                    final SelectionKey socketKey = socketChannel.register(selector, 0, buffer);
                     socketKey.interestOps(SelectionKey.OP_READ);
                     log.info("socketKey {}",socketKey);
                 }else if (selectionKey.isReadable()){ // read 可读事件 SocketChannel 读取
                     try {
                         final SocketChannel channel = (SocketChannel)selectionKey.channel(); // 拿到触发事件的channel
-                        // 创建缓冲区
-                        final ByteBuffer buffer = ByteBuffer.allocate(30);
+                        //获取 SelectionKey 上关联的附件数据
+                        final ByteBuffer buffer = (ByteBuffer) selectionKey.attachment();
                         // 读取数据 实际字节数 如果正常断开连接返回值 -1
                         final int len = channel.read(buffer);
                         if(len == -1){
                             // 取消(从selector的key集合中真正删除)selectionKey
                             selectionKey.cancel();
                         }else {
-                            // 切换读取模式
                             buffer.flip();
                             // 读取中文字符
                             log.info("INFO READ:  {}",Charset.defaultCharset().decode(buffer));
+                            // 说明buffer 已满 需要扩容
+                            if(buffer.position() == buffer.limit()){
+                                final ByteBuffer newBuffer = ByteBuffer.allocate(buffer.capacity() * 2);
+                                // 旧的buffer开启读取模式
+                                buffer.flip();
+                                // 数据拷贝传输 newBuffer 新的buffer buffer 旧的buffer数据
+                                newBuffer.put(buffer);
+                                // 数据扩容
+                                selectionKey.attach(newBuffer);
+
+                            }
+
                         }
 
                     }catch (IOException e){
