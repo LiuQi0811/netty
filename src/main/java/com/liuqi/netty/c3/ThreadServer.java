@@ -6,12 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.nio.charset.Charset;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /*
  *@ClassName ThreadServer
@@ -65,9 +63,7 @@ public class ThreadServer {
                     log.info("服务连接地址......{}",socketChannel.getRemoteAddress());
                     log.info("注册前......{}",socketChannel.getRemoteAddress());
                     // 初始化线程 和 selector
-                    w1.register();
-                    // 关联selector
-                    socketChannel.register(w1.selector,SelectionKey.OP_READ,null);
+                    w1.register(socketChannel);
                     log.info("注册后 ......{}",socketChannel.getRemoteAddress());
                 }
 
@@ -83,6 +79,7 @@ public class ThreadServer {
         private Selector selector;
         private String name;
         private volatile Boolean start = false; //启动状态 未启动
+        private ConcurrentLinkedQueue<Runnable> concurrentLinkedQueue = new ConcurrentLinkedQueue<>();
         // 构造方法
         public  Worker(String name){
             this.name = name;
@@ -91,23 +88,40 @@ public class ThreadServer {
         /**
          * 初始化线程 和 selector
          */
-        public void register() throws IOException {
-            if(!start){
+        public void register(SocketChannel socketChannel) throws IOException {
+            if (!start) {
                 // 初始化线程对象
-                this.thread = new Thread(this,name);
+                this.thread = new Thread(this, name);
                 // 启动线程
                 this.thread.start();
                 // 初始化 selector 对象
                 this.selector = Selector.open();
                 start = true; //切换启动状态 已启动
             }
+            concurrentLinkedQueue.add(() -> { // 向队列添加任务，但是这个任务并没有立刻执行
+                // 关联selector
+                try {
+                    socketChannel.register(this.selector, SelectionKey.OP_READ, null);
+                } catch (ClosedChannelException e) {
+                    e.printStackTrace();
+                }
+
+            });
+            // 唤醒 select方法
+            this.selector.wakeup();
         }
+
         @SneakyThrows
         @Override
         public void run() {
             while (true){
                 // select 方法 没有事件发生 线程阻塞 有事件发生线程恢复运行
-                this.selector.select();
+                this.selector.select(); //W1 阻塞
+                final Runnable poll = concurrentLinkedQueue.poll();
+                if (poll!=null) {
+                    // 执行 concurrentLinkedQueue add 方法
+                    poll.run();
+                }
                 // 处理事件 selectedKeys可读可写连接事件集合 内部包含了所有发生的事件 Iterator遍历
                 final Iterator<SelectionKey> selectionKeyIterator = this.selector.selectedKeys().iterator();
                 while (selectionKeyIterator.hasNext()){
