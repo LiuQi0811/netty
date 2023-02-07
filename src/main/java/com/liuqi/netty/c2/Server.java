@@ -170,6 +170,7 @@ public class Server {
                     try {
                         final SocketChannel channel = (SocketChannel)selectionKey.channel(); // 拿到触发事件的channel
                         //获取 SelectionKey 上关联的附件数据
+                        log.info("获取 SelectionKey 上关联的附件数据:::{},",selectionKey.attachment());
                         final ByteBuffer buffer = (ByteBuffer) selectionKey.attachment();
                         // 读取数据 实际字节数 如果正常断开连接返回值 -1
                         final int len = channel.read(buffer);
