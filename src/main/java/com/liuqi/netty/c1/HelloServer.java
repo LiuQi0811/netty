@@ -33,6 +33,7 @@ public class HelloServer {
                     @Override
                     protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
                         // 将 ByteBuf 转换为字符串
+                        // 创建解码器
                         nioSocketChannel.pipeline().addLast(new StringDecoder());
                         nioSocketChannel.pipeline().addLast(new ChannelInboundHandlerAdapter(){ //自定义handler
                             @Override
