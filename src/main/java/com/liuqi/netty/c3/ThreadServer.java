@@ -10,6 +10,7 @@ import java.nio.channels.*;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /*
  *@ClassName ThreadServer
@@ -42,7 +43,14 @@ public class ThreadServer {
         // 绑定 ip 端口号
         serverSocketChannel.bind(new InetSocketAddress(8080));
         log.info("服务端正在连接.....");
-        final Worker w1 = new Worker("W1");
+//        final Worker w1 = new Worker("W1");
+
+        Worker[] workers = new Worker[2];
+        for (int i = 0; i < workers.length; i++) {
+            workers[i] = new Worker("worker - "+ i);
+        }
+        // 原子计数器
+        AtomicInteger atomicInteger = new AtomicInteger();
         while (true){
             // select 方法 没有事件发生 线程阻塞 有事件发生线程恢复运行
             selector.select();
@@ -62,8 +70,8 @@ public class ThreadServer {
                     socketChannel.configureBlocking(false);
                     log.info("服务连接地址......{}",socketChannel.getRemoteAddress());
                     log.info("注册前......{}",socketChannel.getRemoteAddress());
-                    // 初始化线程 和 selector
-                    w1.register(socketChannel);
+                    // 初始化线程 和 selector round robin
+                    workers[atomicInteger.get()%workers.length].register(socketChannel);
                     log.info("注册后 ......{}",socketChannel.getRemoteAddress());
                 }
 
