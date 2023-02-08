@@ -1,4 +1,4 @@
-package com.liuqi.netty.c1;
+package com.liuqi.nio.c1;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -6,7 +6,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.util.Date;
 
 /*
  *@ClassName FileChannelTransferTo

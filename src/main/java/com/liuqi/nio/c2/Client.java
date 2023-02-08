@@ -1,4 +1,4 @@
-package com.liuqi.netty.c3;
+package com.liuqi.nio.c2;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -8,21 +8,21 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 
 /*
- *@ClassName ThreadClient
+ *@ClassName Client
  *@Description TODO
  *@Author LiuQi
- *@Date 2023/2/6 20:44
+ *@Date 2023/2/3 17:24
  *@Version 1.0
  */
 @Slf4j
-public class ThreadClient {
-
+public class Client {
     public static void main(String[] args) throws IOException {
+        // 创建 socket 服务器
         final SocketChannel socketChannel = SocketChannel.open();
-        socketChannel.connect(new InetSocketAddress(8080));
-        log.info("正在连接客户端......");
-        socketChannel.write(Charset.defaultCharset().encode("王老先生有块地，咿呀咿呀哟！"));
-        System.in.read();
+        socketChannel.connect(new InetSocketAddress("localhost",8080));
+        socketChannel.write(Charset.defaultCharset().encode("我爱你，李桂雪"));
+        log.info("等待中.....");
+        System.in.read(); //阻塞方法
 
     }
 }
