@@ -46,9 +46,10 @@ public class InetSocketAddressServer {
         try {
             // 创建服务端
             serverSocket  = new ServerSocket(9090);
-            //等待客户端 连接服务 阻塞模式
-            socket = serverSocket.accept();
-            log.info("服务端 {}",serverSocket);
+            while (true){
+                //等待客户端 连接服务 阻塞模式
+                socket = serverSocket.accept();
+                log.info("服务端 {}",serverSocket);
 
                 // 读取数据
                 // 读取接收客户端消息
@@ -74,6 +75,7 @@ public class InetSocketAddressServer {
                     log.info("接收到的消息：{}",outputStream);
 
                 }
+            }
 
         }catch (IOException e){
             e.printStackTrace();
