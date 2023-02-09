@@ -1,10 +1,16 @@
 package com.liuqi.net.c2;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /*
  *@ClassName InetSocketAddressServer
@@ -16,7 +22,7 @@ import java.net.ServerSocket;
 @Slf4j
 public class InetSocketAddressServer {
     public static void main(String[] args) throws IOException {
-        server();
+        server("");
     }
 
     /**
@@ -31,20 +37,60 @@ public class InetSocketAddressServer {
         log.info("「 ip端口号：」{}",socketAddress.getPort());
     }
 
-    private static void server(){
+    @SneakyThrows
+    private static void server(String type){
+        ServerSocket serverSocket = null;
+        Socket socket =null;
+        InputStream is = null;
+        ByteArrayOutputStream outputStream =null;
         try {
             // 创建服务端
-            final ServerSocket serverSocket = new ServerSocket(9090);
-            // 连接服务
-            serverSocket.accept();
-            while (true){
+            serverSocket  = new ServerSocket(9090);
+            //等待客户端 连接服务 阻塞模式
+            socket = serverSocket.accept();
+            log.info("服务端 {}",serverSocket);
+
                 // 读取数据
-                log.info("服务端 {}",serverSocket);
-            }
+                // 读取接收客户端消息
+                is = socket.getInputStream();
+                if(type.equals("1")){
+                    // 创建缓冲区
+                    byte[] bytes =new byte[1024];
+                    int len;
+                    // 循环接收数据
+                    while ((len = is.read(bytes))!=-1){
+                        final String message = new String(bytes, 0, len);
+                        log.info("接收到的消息：{}",message);
+                    }
+                }else {
+                    // 创建 io管道流
+                    outputStream = new ByteArrayOutputStream();
+                    // 创建缓冲区
+                    byte[] buffer =new byte[1024];
+                    int len;
+                    while ((len= is.read(buffer))!=-1){
+                        outputStream.write(buffer,0,len);
+                    }
+                    log.info("接收到的消息：{}",outputStream);
+
+                }
+
         }catch (IOException e){
             e.printStackTrace();
         }finally {
-
+            // 关闭资源
+            if (outputStream!=null){
+                outputStream.close();
+            }
+           if (is!=null){
+               is.close();
+           }
+            if (socket!=null){
+                socket.close();
+            }
+            if (serverSocket!=null){
+                serverSocket.close();
+            }
         }
 
     }
