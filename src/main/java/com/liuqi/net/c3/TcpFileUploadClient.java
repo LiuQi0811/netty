@@ -3,17 +3,14 @@ package com.liuqi.net.c3;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
 /*
  *@ClassName TcpFileUploadClient
- *@Description TcpFileUploadClient
+ *@Description TcpFileUploadClient 文件传输
  *@Author LiuQi
  *@Date 2023/2/9 16:04
  *@Version 1.0
@@ -26,6 +23,8 @@ public class TcpFileUploadClient
         Socket socket = null;
         OutputStream os = null;
         FileInputStream fis = null;
+        InputStream is = null;
+        ByteArrayOutputStream bos = null;
         try {
               // 创建socket 客户端连接
               socket = new Socket(InetAddress.getLocalHost(), 9091);
@@ -38,10 +37,29 @@ public class TcpFileUploadClient
               while ((len=fis.read(buffer))!=-1){
                 os.write(buffer,0,len);
               }
+              // 通知服务器我已经传输数据完毕
+              socket.shutdownOutput();
+              // 确定服务器接收数据完毕，关闭客户端连接
+              is = socket.getInputStream();
+              bos = new ByteArrayOutputStream();
+              byte[] buf = new byte[1024];
+              int size;
+              if ((size=is.read(buf))!=-1) {
+                    bos.write(buf,0,size);
+              }
+              log.info("{}",bos);
+
+
         }catch (IOException e){
             e.printStackTrace();
         }
         finally {
+            if(bos!=null){
+                bos.close();
+            }
+            if(is!=null){
+                is.close();
+            }
             if (os!=null) {
                 os.close();
             }
