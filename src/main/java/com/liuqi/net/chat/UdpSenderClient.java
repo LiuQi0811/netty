@@ -25,12 +25,18 @@ public class UdpSenderClient {
          DatagramSocket socket = new DatagramSocket(8888);
         // 控制台读取 System.in
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        String data = reader.readLine();
-        byte[] bytes = data.getBytes(StandardCharsets.UTF_8);
-        // 创建包
-        DatagramPacket packet = new DatagramPacket(bytes,0,bytes.length,new InetSocketAddress("localhost",6666));
-        // 发送数据包
-        socket.send(packet);
+        while (true){
+            String data = reader.readLine();
+            byte[] bytes = data.getBytes(StandardCharsets.UTF_8);
+            // 创建包
+            DatagramPacket packet = new DatagramPacket(bytes,0,bytes.length,new InetSocketAddress("localhost",6666));
+            // 发送数据包
+            socket.send(packet);
+            if (data.equals("bye"))
+            {
+                break;
+            }
+        }
         // 关闭连接
         socket.close();
 
