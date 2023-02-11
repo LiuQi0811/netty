@@ -1,7 +1,9 @@
 package com.liuqi.netty.c3;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -22,18 +24,42 @@ import java.util.Scanner;
 @Slf4j
 public abstract class EventLoopClient {
     public static void main(String[] args) throws InterruptedException {
+        methodTwo();
+    }
+    /**
+     * 发送消息方式一
+     * @throws InterruptedException
+     */
+    private static void methodOne() throws InterruptedException {
         final Scanner scanner = new Scanner(System.in);
-       do {
-           log.info("请输入想要发送的信息：    退出请输入：exit");
-           final String message = scanner.nextLine();
-           if(message.equals("exit")){
-               log.info("退出成功！");
-            break;
-           }
-           init().sync()
-                   .channel()
-                   .writeAndFlush(message);
-       }while (true);
+        do {
+            log.info("请输入想要发送的信息：    退出请输入：exit");
+            final String message = scanner.nextLine();
+            if(message.equals("exit")){
+                log.info("退出成功！");
+                break;
+            }
+            init().sync() // sync方法同步处理结果
+                    .channel()
+                    .writeAndFlush(message);
+        }while (true);
+    }
+
+    /**
+     * 发送消息方式二
+     * @throws InterruptedException
+     */
+    private static void methodTwo() throws InterruptedException {
+        init().
+                // 使用addListener(回调对象) 方法异步处理结果
+                addListener(new ChannelFutureListener() {
+                    @Override
+                    public void operationComplete(ChannelFuture channelFuture) throws Exception { //在 nio线程连接建立好之后，会调用
+                        Channel channel = channelFuture.channel();
+                        channel.writeAndFlush("你好啊 陌生人");
+
+                    }
+                });
     }
     /**
      * 客户端启动器 负责组装 netty组件 启动客户端
@@ -54,6 +80,8 @@ public abstract class EventLoopClient {
                         nioSocketChannel.pipeline().addLast(new StringEncoder());
                     }
                 })
+                // 连接服务器
+                // 异步非阻塞，main发起了调用，真正执行connect 是 nio线程
                 .connect(new InetSocketAddress(8080));
     }
 }

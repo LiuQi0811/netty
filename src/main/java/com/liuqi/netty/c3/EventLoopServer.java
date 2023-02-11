@@ -2,10 +2,7 @@ package com.liuqi.netty.c3;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -24,7 +21,7 @@ import java.nio.charset.Charset;
 public abstract class EventLoopServer {
 
     public static void main(String[] args) {
-        channelFuture();
+        channel();
     }
     /**
      * 服务启动器初始化
@@ -70,7 +67,7 @@ public abstract class EventLoopServer {
                 // Boss 和 Work
                 // Boss只负责ServerSocketChannel上 accept事件 Work只负责SocketChannel上的读写
                 // NioEventLoopGroup （selector,thread） 包含选择器和线程 ，group组
-                .group(new NioEventLoopGroup(),new NioEventLoopGroup())
+                .group(new NioEventLoopGroup(),new NioEventLoopGroup(2))
                 // 选择 服务器的ServerSocketChannel 实现
                 .channel(NioServerSocketChannel.class)
                 // 一个负责处理连接 另一个负责处理读写，决定了 worker(child) 能执行哪些操作（handler）
@@ -88,6 +85,42 @@ public abstract class EventLoopServer {
                                 });
                             }
                         })
+                //绑定 IP，端口
+                .bind(8080);
+    }
+
+
+    private static void channel(){
+        // 创建独立EventLoopGroup
+        EventLoopGroup defaultEventLoopGroup = new DefaultEventLoopGroup();
+        // 服务启动器 负责组装 netty组件 启动服务器
+        new ServerBootstrap()
+                //Boss 和 Work
+                // Boss只负责ServerSocketChannel上 accept事件 Work只负责SocketChannel上的读写
+                // NioEventLoopGroup （selector,thread） 包含选择器和线程 ，group组
+                .group(new NioEventLoopGroup(),new NioEventLoopGroup(2))
+                // 选择 服务器的ServerSocketChannel 实现
+                .channel(NioServerSocketChannel.class)
+                // 一个负责处理连接 另一个负责处理读写，决定了 worker(child) 能执行哪些操作（handler）
+                .childHandler(new ChannelInitializer<NioSocketChannel>() {
+                    @Override
+                    protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
+                        nioSocketChannel.pipeline().addLast("one",new ChannelInboundHandlerAdapter(){
+                            @Override
+                            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                                 ByteBuf byteBuf = (ByteBuf) msg;
+                                 log.info(byteBuf.toString(Charset.defaultCharset()));
+                                 ctx.fireChannelRead(msg); //将消息传递给下一个handler
+                            }
+                        }).addLast(defaultEventLoopGroup,"two",new ChannelInboundHandlerAdapter(){
+                            @Override
+                            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                                ByteBuf byteBuf = (ByteBuf) msg;
+                                log.info(byteBuf.toString(Charset.defaultCharset()));
+                            }
+                        });
+                    }
+                })
                 //绑定 IP，端口
                 .bind(8080);
     }
