@@ -26,8 +26,8 @@ public class JDKFuture {
         final Future<Integer> future = executorService.submit(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
-                log.info("执行计算");
-                Thread.sleep(1000);
+                 log.info("执行计算");
+                 Thread.sleep(1000);
                 return 100;
             }
         });
