@@ -23,8 +23,10 @@ import java.util.Scanner;
 @Slf4j
 public class CloseFutureClient {
     public static void main(String[] args) throws InterruptedException {
+        // 创建NioEventLoopGroup对象
+        NioEventLoopGroup nioEventLoopGroup = new NioEventLoopGroup();
         ChannelFuture channelFuture = new Bootstrap()// 客户端启动器 负责组装 netty组件 启动客户端
-                .group(new NioEventLoopGroup()) // 添加 EventLoopGroup
+                .group(nioEventLoopGroup) // 添加 EventLoopGroup
                 .channel(NioSocketChannel.class) // 选择客户端channel 实现
                 .handler(new ChannelInitializer<NioSocketChannel>() {  // 添加处理器
                     @Override
@@ -59,6 +61,7 @@ public class CloseFutureClient {
                 @Override
                 public void operationComplete(ChannelFuture channelFuture) throws Exception {
                     log.info("关闭操作");
+                    nioEventLoopGroup.shutdownGracefully(); // 关闭nio线程
                 }
             });
 
