@@ -25,10 +25,14 @@ public class NettyPromise {
         new Thread(()->{
             // 任意一个线程执行计算，计算完毕后向 promise填充结果
             log.info("开始计算......");
+            // 错误的运算
+            int i = 1/0;
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
+                // 获取错误的结果
+                defaultPromise.setFailure(e);
             }
             // 设置 返回结果
             defaultPromise.setSuccess(102);
